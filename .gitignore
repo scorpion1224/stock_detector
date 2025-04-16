@@ -21,9 +21,9 @@ var/
 *.egg
 
 # Virtual Environment
+venv/
 .env
 .venv
-venv/
 ENV/
 
 # IDE
@@ -33,4 +33,8 @@ ENV/
 *.swo
 
 # Streamlit
-.streamlit/secrets.toml 
+.streamlit/secrets.toml
+
+# Misc
+.DS_Store
+*.log 

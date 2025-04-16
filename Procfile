@@ -1,0 +1,1 @@
+web: streamlit run stock_analyzer.py 
