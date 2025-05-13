@@ -1,69 +1,59 @@
-# 股票爆发信号分析系统
+# Stock Detector
 
-这是一个基于技术分析和AI的股票爆发信号分析系统，用于识别潜在的股票突破机会。
+A powerful stock analysis tool that supports both A-shares and Hong Kong stocks, featuring technical analysis, breakout detection, and AI-powered insights.
 
-## 功能特点
+## Features
 
-- 获取历史股票数据并计算技术指标
-- 检测潜在的突破信号
-- AI驱动的股票分析
-- 可视化技术指标
-- 交互式Web界面
+- Real-time stock data analysis for A-shares and Hong Kong stocks
+- Technical indicators calculation (MA, RSI, MACD, Bollinger Bands)
+- Breakout pattern detection
+- AI-powered stock analysis using Deepseek
+- Interactive charts and visualizations
+- User-friendly Streamlit interface
 
-## 安装
+## Setup
 
-1. 克隆仓库：
+1. Clone the repository:
 ```bash
 git clone https://github.com/yourusername/stock_detector.git
 cd stock_detector
 ```
 
-2. 安装依赖：
+2. Create a virtual environment and activate it:
+```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows, use `.venv\Scripts\activate`
+```
+
+3. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. 配置环境变量：
-```bash
-cp .env.example .env
+4. Create a `.env` file with your API keys:
 ```
-然后编辑 `.env` 文件，填入你的API密钥和设置。
+TUSHARE_TOKEN=your_tushare_token
+DEEPSEEK_API_KEY=your_deepseek_api_key
+```
 
-## 使用方法
-
-1. 运行Streamlit应用：
+5. Run the app:
 ```bash
 streamlit run stock_analyzer.py
 ```
 
-2. 在Web界面中：
-   - 输入股票代码
-   - 选择分析的时间范围
-   - 点击"分析"按钮查看结果
+## Usage
 
-## 技术指标
+1. Select the market (A-shares or Hong Kong stocks)
+2. Enter the stock code
+3. Choose the date range for analysis
+4. Click "Analyze" to get results
 
-系统分析以下技术指标：
-- 移动平均线 (MA5, MA20)
-- 相对强弱指数 (RSI)
-- MACD
-- 布林带
-- 成交量指标
+## Requirements
 
-## 突破信号检测
+- Python 3.8+
+- Tushare API token
+- Deepseek API key
 
-系统会检测以下突破信号：
-- MACD金叉
-- 布林带突破
-- RSI突破
-- 成交量放大
-
-## 注意事项
-
-- 请确保你有有效的Tushare和Deepseek API密钥
-- 建议在分析前先进行回测
-- 本系统仅供参考，不构成投资建议
-
-## 许可证
+## License
 
 MIT License 
