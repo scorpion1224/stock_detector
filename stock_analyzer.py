@@ -21,6 +21,12 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 load_dotenv()
 
+# Debug: Print all environment variables
+st.write("Debug: All environment variables:")
+for key, value in os.environ.items():
+    if 'TOKEN' in key or 'KEY' in key:
+        st.write(f"{key}: {'*' * len(value) if value else 'Not set'}")
+
 class StockAnalyzer:
     def __init__(self):
         try:
@@ -29,9 +35,15 @@ class StockAnalyzer:
             deepseek_api_key = os.getenv('DEEPSEEK_API_KEY')
             
             # Debug information
-            logger.info("Checking environment variables...")
-            logger.info(f"TUSHARE_TOKEN exists: {bool(tushare_token)}")
-            logger.info(f"DEEPSEEK_API_KEY exists: {bool(deepseek_api_key)}")
+            st.write("Debug: Checking environment variables...")
+            st.write(f"TUSHARE_TOKEN exists: {bool(tushare_token)}")
+            st.write(f"DEEPSEEK_API_KEY exists: {bool(deepseek_api_key)}")
+            
+            # Debug: Print the actual values (masked)
+            if tushare_token:
+                st.write(f"TUSHARE_TOKEN value: {'*' * len(tushare_token)}")
+            if deepseek_api_key:
+                st.write(f"DEEPSEEK_API_KEY value: {'*' * len(deepseek_api_key)}")
             
             if not tushare_token:
                 error_msg = "TUSHARE_TOKEN 环境变量未设置"
