@@ -21,21 +21,27 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 load_dotenv()
 
-# Debug: Print all environment variables
+# Debug: Print all environment variables and secrets
 st.write("Debug: All environment variables:")
 for key, value in os.environ.items():
     if 'TOKEN' in key or 'KEY' in key:
         st.write(f"{key}: {'*' * len(value) if value else 'Not set'}")
 
+st.write("\nDebug: Streamlit secrets:")
+if 'TUSHARE_TOKEN' in st.secrets:
+    st.write("TUSHARE_TOKEN exists in secrets")
+if 'DEEPSEEK_API_KEY' in st.secrets:
+    st.write("DEEPSEEK_API_KEY exists in secrets")
+
 class StockAnalyzer:
     def __init__(self):
         try:
-            # Check for required environment variables
-            tushare_token = os.getenv('TUSHARE_TOKEN')
-            deepseek_api_key = os.getenv('DEEPSEEK_API_KEY')
+            # Try to get credentials from Streamlit secrets first, then environment variables
+            tushare_token = st.secrets.get('TUSHARE_TOKEN') or os.getenv('TUSHARE_TOKEN')
+            deepseek_api_key = st.secrets.get('DEEPSEEK_API_KEY') or os.getenv('DEEPSEEK_API_KEY')
             
             # Debug information
-            st.write("Debug: Checking environment variables...")
+            st.write("\nDebug: Checking credentials...")
             st.write(f"TUSHARE_TOKEN exists: {bool(tushare_token)}")
             st.write(f"DEEPSEEK_API_KEY exists: {bool(deepseek_api_key)}")
             
@@ -46,13 +52,13 @@ class StockAnalyzer:
                 st.write(f"DEEPSEEK_API_KEY value: {'*' * len(deepseek_api_key)}")
             
             if not tushare_token:
-                error_msg = "TUSHARE_TOKEN 环境变量未设置"
+                error_msg = "TUSHARE_TOKEN 未设置。请在 Streamlit Cloud 的 Secrets 中配置。"
                 logger.error(error_msg)
                 st.error(error_msg)
                 st.stop()
                 
             if not deepseek_api_key:
-                error_msg = "DEEPSEEK_API_KEY 环境变量未设置"
+                error_msg = "DEEPSEEK_API_KEY 未设置。请在 Streamlit Cloud 的 Secrets 中配置。"
                 logger.error(error_msg)
                 st.error(error_msg)
                 st.stop()
