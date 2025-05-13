@@ -21,18 +21,6 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 load_dotenv()
 
-# Debug: Print all environment variables and secrets
-st.write("Debug: All environment variables:")
-for key, value in os.environ.items():
-    if 'TOKEN' in key or 'KEY' in key:
-        st.write(f"{key}: {'*' * len(value) if value else 'Not set'}")
-
-st.write("\nDebug: Streamlit secrets:")
-if 'TUSHARE_TOKEN' in st.secrets:
-    st.write("TUSHARE_TOKEN exists in secrets")
-if 'DEEPSEEK_API_KEY' in st.secrets:
-    st.write("DEEPSEEK_API_KEY exists in secrets")
-
 class StockAnalyzer:
     def __init__(self):
         try:
@@ -40,37 +28,19 @@ class StockAnalyzer:
             tushare_token = st.secrets.get('TUSHARE_TOKEN') or os.getenv('TUSHARE_TOKEN')
             deepseek_api_key = st.secrets.get('DEEPSEEK_API_KEY') or os.getenv('DEEPSEEK_API_KEY')
             
-            # Debug information
-            st.write("\nDebug: Checking credentials...")
-            st.write(f"TUSHARE_TOKEN exists: {bool(tushare_token)}")
-            st.write(f"DEEPSEEK_API_KEY exists: {bool(deepseek_api_key)}")
-            
-            # Debug: Print the actual values (masked)
-            if tushare_token:
-                st.write(f"TUSHARE_TOKEN value: {'*' * len(tushare_token)}")
-            if deepseek_api_key:
-                st.write(f"DEEPSEEK_API_KEY value: {'*' * len(deepseek_api_key)}")
-            
             if not tushare_token:
-                error_msg = "TUSHARE_TOKEN 未设置。请在 Streamlit Cloud 的 Secrets 中配置。"
-                logger.error(error_msg)
-                st.error(error_msg)
+                st.error("TUSHARE_TOKEN 未设置。请在 Streamlit Cloud 的 Secrets 中配置。")
                 st.stop()
                 
             if not deepseek_api_key:
-                error_msg = "DEEPSEEK_API_KEY 未设置。请在 Streamlit Cloud 的 Secrets 中配置。"
-                logger.error(error_msg)
-                st.error(error_msg)
+                st.error("DEEPSEEK_API_KEY 未设置。请在 Streamlit Cloud 的 Secrets 中配置。")
                 st.stop()
             
             # Initialize Tushare
-            logger.info("Initializing Tushare...")
             ts.set_token(tushare_token)
             self.pro = ts.pro_api()
-            logger.info("Tushare initialized successfully")
             
             # Initialize Deepseek client
-            logger.info("Initializing OpenAI client...")
             try:
                 self.client = OpenAI(
                     api_key=deepseek_api_key,
@@ -78,17 +48,12 @@ class StockAnalyzer:
                 )
                 # Test the client
                 self.client.models.list()
-                logger.info("OpenAI client initialized and tested successfully")
             except Exception as e:
-                error_msg = f"OpenAI client initialization failed: {str(e)}"
-                logger.error(error_msg, exc_info=True)
-                st.error(error_msg)
+                st.error(f"OpenAI client initialization failed: {str(e)}")
                 st.stop()
             
         except Exception as e:
-            error_msg = f"初始化失败: {str(e)}"
-            logger.error(error_msg, exc_info=True)
-            st.error(error_msg)
+            st.error(f"初始化失败: {str(e)}")
             st.stop()
         
         # 设置突破检测参数
@@ -290,61 +255,72 @@ class StockAnalyzer:
             return f"AI 分析生成失败: {str(e)}"
 
 def main():
+    st.set_page_config(
+        page_title="股票分析系统",
+        page_icon="📈",
+        layout="wide"
+    )
+    
     st.title("股票爆发信号分析系统 (支持A股和港股)")
     
-    analyzer = StockAnalyzer()
-    
-    # Sidebar inputs
-    st.sidebar.header("参数设置")
-    market = st.sidebar.selectbox("选择市场", ["A股", "港股"])
-    
-    if market == "A股":
-        stock_code_help = "输入股票代码 (例如: 000678.SZ, 600519.SH)"
-        default_code = "000678.SZ"
-    else:
-        stock_code_help = "输入港股代码 (例如: 00700, 02318)"
-        default_code = "00700"
+    try:
+        analyzer = StockAnalyzer()
         
-    stock_code = st.sidebar.text_input("股票代码", default_code, help=stock_code_help)
-    start_date = st.sidebar.date_input("开始日期", datetime.now() - timedelta(days=180))
-    end_date = st.sidebar.date_input("结束日期", datetime.now())
-    
-    if st.sidebar.button("分析"):
-        with st.spinner('正在获取数据并分析...'):
-            # Get and analyze data
-            df = analyzer.get_stock_history(
-                stock_code,
-                start_date.strftime('%Y%m%d'),
-                end_date.strftime('%Y%m%d')
-            )
+        # Sidebar inputs
+        st.sidebar.header("参数设置")
+        market = st.sidebar.selectbox("选择市场", ["A股", "港股"])
+        
+        if market == "A股":
+            stock_code_help = "输入股票代码 (例如: 000678.SZ, 600519.SH)"
+            default_code = "000678.SZ"
+        else:
+            stock_code_help = "输入港股代码 (例如: 00700, 02318)"
+            default_code = "00700"
             
-            if df.empty:
-                st.error("获取数据失败，请检查股票代码是否正确")
-                return
-            
-            # Display results
-            st.subheader("技术分析图表")
-            fig = analyzer.plot_stock_data(df)
-            if fig:
-                st.pyplot(fig)
-            
-            # Check for breakout
-            if analyzer.detect_breakout(df):
-                st.success("发现潜在突破信号！")
-            else:
-                st.info("未发现明显突破信号")
-            
-            # Display recent data
-            st.subheader("最近交易数据")
-            st.dataframe(df.tail().style.format({
-                col: '{:.2f}' for col in df.select_dtypes(include=['float64']).columns
-            }))
-            
-            # AI Analysis
-            st.subheader("AI 深度分析")
-            with st.spinner('正在进行 AI 分析...'):
-                ai_analysis = analyzer.analyze_stock_ai(df, stock_code)
-                st.markdown(ai_analysis)
+        stock_code = st.sidebar.text_input("股票代码", default_code, help=stock_code_help)
+        start_date = st.sidebar.date_input("开始日期", datetime.now() - timedelta(days=180))
+        end_date = st.sidebar.date_input("结束日期", datetime.now())
+        
+        if st.sidebar.button("分析"):
+            with st.spinner('正在获取数据并分析...'):
+                # Get and analyze data
+                df = analyzer.get_stock_history(
+                    stock_code,
+                    start_date.strftime('%Y%m%d'),
+                    end_date.strftime('%Y%m%d')
+                )
+                
+                if df.empty:
+                    st.error("获取数据失败，请检查股票代码是否正确")
+                    return
+                
+                # Display results
+                st.subheader("技术分析图表")
+                fig = analyzer.plot_stock_data(df)
+                if fig:
+                    st.pyplot(fig)
+                
+                # Check for breakout
+                if analyzer.detect_breakout(df):
+                    st.success("发现潜在突破信号！")
+                else:
+                    st.info("未发现明显突破信号")
+                
+                # Display recent data
+                st.subheader("最近交易数据")
+                st.dataframe(df.tail().style.format({
+                    col: '{:.2f}' for col in df.select_dtypes(include=['float64']).columns
+                }))
+                
+                # AI Analysis
+                st.subheader("AI 深度分析")
+                with st.spinner('正在进行 AI 分析...'):
+                    ai_analysis = analyzer.analyze_stock_ai(df, stock_code)
+                    st.markdown(ai_analysis)
+                    
+    except Exception as e:
+        st.error(f"发生错误: {str(e)}")
+        logger.error(f"Application error: {str(e)}", exc_info=True)
 
 if __name__ == "__main__":
     main() 
