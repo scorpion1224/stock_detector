@@ -8,9 +8,14 @@ import streamlit as st
 from dotenv import load_dotenv
 from openai import OpenAI
 import logging
+import sys
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stdout
+)
 logger = logging.getLogger(__name__)
 
 # Load environment variables
@@ -18,40 +23,54 @@ load_dotenv()
 
 class StockAnalyzer:
     def __init__(self):
-        # Check for required environment variables
-        tushare_token = os.getenv('TUSHARE_TOKEN')
-        deepseek_api_key = os.getenv('DEEPSEEK_API_KEY')
-        
-        # Debug information
-        st.write("Debug: Checking environment variables...")
-        st.write(f"TUSHARE_TOKEN exists: {bool(tushare_token)}")
-        st.write(f"DEEPSEEK_API_KEY exists: {bool(deepseek_api_key)}")
-        
-        if not tushare_token:
-            st.error("TUSHARE_TOKEN 环境变量未设置。请在 Streamlit Cloud 的 Secrets 中配置。")
-            st.stop()
-            
-        if not deepseek_api_key:
-            st.error("DEEPSEEK_API_KEY 环境变量未设置。请在 Streamlit Cloud 的 Secrets 中配置。")
-            st.stop()
-        
         try:
+            # Check for required environment variables
+            tushare_token = os.getenv('TUSHARE_TOKEN')
+            deepseek_api_key = os.getenv('DEEPSEEK_API_KEY')
+            
+            # Debug information
+            logger.info("Checking environment variables...")
+            logger.info(f"TUSHARE_TOKEN exists: {bool(tushare_token)}")
+            logger.info(f"DEEPSEEK_API_KEY exists: {bool(deepseek_api_key)}")
+            
+            if not tushare_token:
+                error_msg = "TUSHARE_TOKEN 环境变量未设置"
+                logger.error(error_msg)
+                st.error(error_msg)
+                st.stop()
+                
+            if not deepseek_api_key:
+                error_msg = "DEEPSEEK_API_KEY 环境变量未设置"
+                logger.error(error_msg)
+                st.error(error_msg)
+                st.stop()
+            
             # Initialize Tushare
+            logger.info("Initializing Tushare...")
             ts.set_token(tushare_token)
             self.pro = ts.pro_api()
-            st.write("Debug: Tushare initialized successfully")
+            logger.info("Tushare initialized successfully")
             
             # Initialize Deepseek client
-            st.write("Debug: Initializing OpenAI client...")
-            self.client = OpenAI(
-                api_key=deepseek_api_key,
-                base_url="https://api.deepseek.com/v1"
-            )
-            st.write("Debug: OpenAI client initialized successfully")
+            logger.info("Initializing OpenAI client...")
+            try:
+                self.client = OpenAI(
+                    api_key=deepseek_api_key,
+                    base_url="https://api.deepseek.com/v1"
+                )
+                # Test the client
+                self.client.models.list()
+                logger.info("OpenAI client initialized and tested successfully")
+            except Exception as e:
+                error_msg = f"OpenAI client initialization failed: {str(e)}"
+                logger.error(error_msg, exc_info=True)
+                st.error(error_msg)
+                st.stop()
             
         except Exception as e:
-            st.error(f"初始化失败: {str(e)}")
-            logger.error(f"Initialization error: {str(e)}", exc_info=True)
+            error_msg = f"初始化失败: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            st.error(error_msg)
             st.stop()
         
         # 设置突破检测参数
